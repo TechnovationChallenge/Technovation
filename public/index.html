@@ -1,62 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CompostNet Classifier</title>
 
-  <!-- Load TensorFlow.js Core -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.9.0/dist/tf.min.js"></script>
+  <!-- Cute kid-friendly theme styling -->
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background-color: #f0ffe3;
+      color: #2e4a2c;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-  <!-- Load TensorFlow Lite for Web -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.7/dist/tf-tflite.min.js"></script>
+    header {
+      width: 100%;
+      background-color: #a8d08d;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      margin-top: 30px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    input[type="file"] {
+      display: block;
+      margin: 15px auto;
+    }
+
+    #preview {
+      margin-top: 15px;
+      border-radius: 16px;
+      max-width: 100%;
+    }
+
+    #result {
+      font-size: 20px;
+      font-weight: bold;
+      color: #3d8037;
+      margin-top: 15px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #3e8e41;
+    }
+  </style>
 </head>
 <body>
-  <h2>CompostNet Waste Classifier</h2>
-  <input type="file" id="imageInput" accept="image/*">
-  <br><br>
-  <img id="preview" width="224" />
-  <p id="result">Prediction: -</p>
+  <header>
+    <h1>✨ CompostNet Waste Classifier ✨</h1>
+  </header>
+
+  <div class="card">
+    <input type="file" id="imageInput" accept="image/*">
+    <img id="preview" alt="Preview" />
+    <p id="result">Prediction: -</p>
+  </div>
 
   <script>
-    const modelUrl = "/Users/ahmednawaz/Desktop/Technovation_host/public/model/compostnet_model.tflite";
-    const labels = ["Compostable", "Recyclable", "Landfill"]; // Update this if needed
+    const apiUrl = "https://technovation-k5mg.onrender.com/predict";
 
-    let tfliteModel;
-
-    async function loadModel() {
-      try {
-        tfliteModel = await tflite.loadTFLiteModel(modelUrl);
-        console.log("✅ Model loaded.");
-      } catch (err) {
-        console.error("❌ Failed to load model:", err);
-      }
-    }
-
-    async function classifyImage(imgElement) {
-      try {
-        const input = tf.browser.fromPixels(imgElement)
-          .resizeBilinear([224, 224])
-          .toFloat().div(255.0)
-          .expandDims();
-
-        const output = tfliteModel.predict(input);
-        const scores = output.dataSync();
-        const topIdx = scores.indexOf(Math.max(...scores));
-        document.getElementById("result").innerText = `Prediction: ${labels[topIdx]}`;
-      } catch (err) {
-        console.error("❌ Error during prediction:", err);
-        document.getElementById("result").innerText = `Prediction failed`;
-      }
-    }
-
-    document.getElementById("imageInput").addEventListener("change", (e) => {
+    document.getElementById("imageInput").addEventListener("change", async (e) => {
       const file = e.target.files[0];
+      if (!file) return;
+
       const img = document.getElementById("preview");
       img.src = URL.createObjectURL(file);
-      img.onload = () => classifyImage(img);
-    });
 
-    loadModel();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      document.getElementById("result").innerText = "Predicting...";
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+        document.getElementById("result").innerText = `Prediction: ${result.prediction} (${(result.confidence * 100).toFixed(2)}%)`;
+      } catch (error) {
+        console.error("Prediction error:", error);
+        document.getElementById("result").innerText = "Error during prediction.";
+      }
+    });
   </script>
 </body>
 </html>
