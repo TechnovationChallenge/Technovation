@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 import os
 
 app = Flask(__name__)
+CORS(app)  # 🔥 Enable CORS for all routes
 
 # Load TFLite model
 interpreter = tf.lite.Interpreter(model_path="model/compostnet_model.tflite")
