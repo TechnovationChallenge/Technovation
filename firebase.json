@@ -4,13 +4,6 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
-        "source": "/predict",
-        "run": {
-          "serviceId": "compostnet-api",
-          "region": "us-central1"
-        }
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
