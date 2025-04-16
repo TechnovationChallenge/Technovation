@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CompostNet Classifier</title>
+
+  <!-- Load TensorFlow.js Core -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.9.0/dist/tf.min.js"></script>
+
+  <!-- Load TensorFlow Lite for Web -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.7/dist/tf-tflite.min.js"></script>
+</head>
+<body>
+  <h2>CompostNet Waste Classifier</h2>
+  <input type="file" id="imageInput" accept="image/*">
+  <br><br>
+  <img id="preview" width="224" />
+  <p id="result">Prediction: -</p>
+
+  <script>
+    const modelUrl = "/Users/ahmednawaz/Desktop/Technovation_host/public/model/compostnet_model.tflite";
+    const labels = ["Compostable", "Recyclable", "Landfill"]; // Update this if needed
+
+    let tfliteModel;
+
+    async function loadModel() {
+      try {
+        tfliteModel = await tflite.loadTFLiteModel(modelUrl);
+        console.log("✅ Model loaded.");
+      } catch (err) {
+        console.error("❌ Failed to load model:", err);
+      }
+    }
+
+    async function classifyImage(imgElement) {
+      try {
+        const input = tf.browser.fromPixels(imgElement)
+          .resizeBilinear([224, 224])
+          .toFloat().div(255.0)
+          .expandDims();
+
+        const output = tfliteModel.predict(input);
+        const scores = output.dataSync();
+        const topIdx = scores.indexOf(Math.max(...scores));
+        document.getElementById("result").innerText = `Prediction: ${labels[topIdx]}`;
+      } catch (err) {
+        console.error("❌ Error during prediction:", err);
+        document.getElementById("result").innerText = `Prediction failed`;
+      }
+    }
+
+    document.getElementById("imageInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      const img = document.getElementById("preview");
+      img.src = URL.createObjectURL(file);
+      img.onload = () => classifyImage(img);
+    });
+
+    loadModel();
+  </script>
+</body>
+</html>
