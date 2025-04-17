@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CompostNet Classifier</title>
 
-  <!-- Cute kid-friendly theme styling -->
   <style>
     body {
       font-family: 'Comic Sans MS', cursive, sans-serif;
@@ -59,20 +58,6 @@
       color: #3d8037;
       margin-top: 15px;
     }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    button:hover {
-      background-color: #3e8e41;
-    }
   </style>
 </head>
 <body>
@@ -81,7 +66,7 @@
   </header>
 
   <div class="card">
-    <input type="file" id="imageInput" accept="image/*">
+    <input type="file" id="imageInput" accept="image/*" capture="environment">
     <img id="preview" alt="Preview" />
     <p id="result">Prediction: -</p>
   </div>
@@ -93,25 +78,35 @@
       const file = e.target.files[0];
       if (!file) return;
 
-      const img = document.getElementById("preview");
-      img.src = URL.createObjectURL(file);
+      const preview = document.getElementById("preview");
+      preview.src = URL.createObjectURL(file);
 
       const formData = new FormData();
       formData.append("file", file);
 
-      document.getElementById("result").innerText = "Predicting...";
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerText = "Predicting...";
 
       try {
         const response = await fetch(apiUrl, {
           method: "POST",
-          body: formData,
+          body: formData
         });
 
-        const result = await response.json();
-        document.getElementById("result").innerText = `Prediction: ${result.prediction} (${(result.confidence * 100).toFixed(2)}%)`;
+        const data = await response.json();
+        const prediction = data.prediction;
+        const confidence = (data.confidence * 100).toFixed(2);
+
+        const text = `Prediction: ${prediction} (${confidence}%)`;
+        resultDiv.innerText = text;
+
+        // 🔊 Speak the result
+        const utter = new SpeechSynthesisUtterance(`This is ${prediction}`);
+        speechSynthesis.speak(utter);
+
       } catch (error) {
         console.error("Prediction error:", error);
-        document.getElementById("result").innerText = "Error during prediction.";
+        resultDiv.innerText = "Prediction failed.";
       }
     });
   </script>
