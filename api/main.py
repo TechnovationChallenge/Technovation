@@ -4,20 +4,17 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import os
-import io
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Set maximum request size to 5MB
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
-
-# Load TFLite model
+# Load model
 try:
     interpreter = tf.lite.Interpreter(model_path="model/compostnet_model.tflite")
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
+    print("✅ Model loaded")
 except Exception as e:
     print("❌ Model load error:", e)
     interpreter = None
@@ -26,6 +23,7 @@ except Exception as e:
 try:
     with open("model/labels.txt", "r") as f:
         labels = [line.strip() for line in f.readlines()]
+    print("✅ Labels loaded:", labels)
 except Exception as e:
     print("❌ Labels file error:", e)
     labels = []
@@ -44,18 +42,14 @@ def predict():
         return jsonify({'error': 'Model or labels not loaded'}), 500
 
     if 'file' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Empty filename'}), 400
 
     try:
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'Empty filename'}), 400
-
-        try:
-            img = Image.open(file.stream).convert('RGB')
-        except Exception:
-            return jsonify({'error': 'File is not a valid image'}), 400
-
+        img = Image.open(file.stream).convert('RGB')
         img = img.resize((224, 224))
         img_array = np.array(img, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
@@ -78,5 +72,5 @@ def predict():
         return jsonify({'error': 'Internal prediction error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # required for Render/Railway
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
