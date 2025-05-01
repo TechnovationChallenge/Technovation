@@ -9,6 +9,9 @@ import io
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# Set maximum request size to 5MB
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
+
 # Load TFLite model
 try:
     interpreter = tf.lite.Interpreter(model_path="model/compostnet_model.tflite")
@@ -75,5 +78,5 @@ def predict():
         return jsonify({'error': 'Internal prediction error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # required for Render
+    port = int(os.environ.get("PORT", 5000))  # required for Render/Railway
     app.run(host='0.0.0.0', port=port)
